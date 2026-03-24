@@ -46,6 +46,9 @@ def load_data(path):
     # keep only test dates for evaluation
     test_dates = sorted(df.loc[df["split"] == "test", "date"].unique())
 
+    # take every 7th date to match weekly rebalancing
+    test_dates = test_dates[::7]
+
     mu_baseline = df_hist[df_hist["model_type"] == "baseline"].pivot(index="date", columns="crypto", values="y_pred")
     mu_regime   = df_hist[df_hist["model_type"] == "regime"].pivot(index="date", columns="crypto", values="y_pred")
     real_returns = df_hist[df_hist["model_type"] == "baseline"].pivot(index="date", columns="crypto", values="y_true")

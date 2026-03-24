@@ -52,6 +52,11 @@ def main():
     # EDIT - run backtests with test_dates
     base_ret, base_w = run_backtest(mu_base, returns, eval_dates=test_dates)
     reg_ret, reg_w   = run_backtest(mu_regime, returns, eval_dates=test_dates)
+    
+    print("--- Check Weekly Structure ---")
+    print(f"Expected for weekly over 1 year: ~52")
+    print(f"Date gaps between observations:")
+    print(pd.Series(base_ret.index).diff().value_counts().head())
 
     # compute cumulative returns
     cum_base = (1 + base_ret).cumprod()

@@ -80,39 +80,41 @@ def run_backtest(mu, real_returns, window=20, lamda=5.0, eval_dates=None):
     dates = mu.index
     assets = mu.columns
 
-    if eval_dates is not None:
-        eval_dates = set(pd.to_datetime(eval_dates))
+    if eval_dates is None or len(eval_dates) == 0:
+        raise ValueError("eval_dates must be provided and cannot be empty")
 
-    for t in range(window * 7, len(dates) - 7, 7):
-        current_date = dates[t]
+    eval_dates = pd.to_datetime(eval_dates)
 
-        hist_7d = real_returns.iloc[t-window*7:t].iloc[::7].values
-        if hist_7d.shape[0] < window:
-            print(f"Warning: insufficient history for cov computationat t={t}, skipping")
+    missing = set(eval_dates) - set(mu.index)
+    if missing:
+        raise ValueError(f"Some eval_dates not found in mu index: {sorted(list(missing))[:5]}")
+
+    for current_date in sorted(eval_dates):
+        t = dates.get_loc(current_date)
+        
+        # need window*7 rows of history before t
+        if t < window * 7:
+            print(f"Insufficient history at {current_date}, skipping")
             continue
-
+        
+        hist_7d = real_returns.iloc[t - window*7 : t].iloc[::7].values
+        if hist_7d.shape[0] < window:
+            continue
+        
         mu_t = mu.iloc[t].values
         cov_t = np.cov(hist_7d.T)
-
-        if np.isnan(mu_t).any() or np.isnan(hist_7d).any():
-            print(f"Warning: missing return data at t={t}, skipping")
+        
+        if np.isnan(mu_t).any() or np.isnan(cov_t).any() or np.isinf(cov_t).any():
             continue
-        if np.any(np.isnan(cov_t)) or np.any(np.isinf(cov_t)):
-            print(f"Warning: degenerate cov at t={t}, skipping")
-            continue
-
+        
+        cov_t = cov_t + 1e-6 * np.eye(cov_t.shape[0])  # regularisation
         w_t = optimize_portfolio(mu_t, cov_t, lamda=lamda)
-
-        # only evaluate on true test dates
-        if eval_dates is not None and current_date not in eval_dates:
-            continue
-
-        r_next = real_returns.iloc[t].values
+        
+        r_next = real_returns.loc[current_date].values
         if np.isnan(r_next).any():
             continue
-
+        
         port_ret = np.dot(w_t, r_next)
-
         portfolio_returns.append((current_date, port_ret))
         weights_history.append((current_date, w_t))
     
