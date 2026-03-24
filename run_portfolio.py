@@ -49,7 +49,7 @@ def main():
     plt.grid()
     plt.show()
 
-    # compute metrics
+    # cogit mpute metrics
     base_metrics = compute_metrics(base_ret)
     reg_metrics  = compute_metrics(reg_ret)
 
