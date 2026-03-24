@@ -10,8 +10,12 @@ def compute_metrics(returns):
     Compute basic performance metrics.
     """
     total_return = (1 + returns).prod() - 1
-    volatility = returns.std() * (252 ** 0.5)  # annualised
-    sharpe = (returns.mean() / returns.std()) * (252 ** 0.5)
+    # volatility = returns.std() * (252 ** 0.5)  # annualised
+    # sharpe = (returns.mean() / returns.std()) * (252 ** 0.5)
+    
+    # EDIT — annualise from weekly (52 periods/year)
+    volatility = returns.std() * (52 ** 0.5)
+    sharpe = (returns.mean() / returns.std()) * (52 ** 0.5)
 
     cumulative = (1 + returns).cumprod()
     drawdown = cumulative / cumulative.cummax() - 1
@@ -28,11 +32,26 @@ def compute_metrics(returns):
 def main():
 
     # load data
-    mu_base, mu_regime, returns = load_data("outputs_draft/all_forecasts.csv")
+    # mu_base, mu_regime, returns = load_data("outputs_draft/all_forecasts.csv")
+    # EDIT — updated load_data to also return test_dates, which we can use to filter the backtest evaluation
+    mu_base, mu_regime, returns, test_dates = load_data("outputs_draft/all_forecasts.csv")
+
+
+    print("--- Data Shape Diagnostic ---")
+    print(f"mu_base shape: {mu_base.shape}")
+    print(f"returns shape: {returns.shape}")
+    print(f"date range: {returns.index.min()} to {returns.index.max()}")
+    print(f"number of test dates: {len(test_dates)}")
+    print(f"first test date: {min(test_dates)}")
+    print(f"rows before first test date: {(returns.index < min(test_dates)).sum()}")
+    print(f"window * 7 required: {20 * 7}")
 
     # run backtests
-    base_ret, base_w = run_backtest(mu_base, returns)
-    reg_ret, reg_w   = run_backtest(mu_regime, returns)
+    # base_ret, base_w = run_backtest(mu_base, returns)
+    # reg_ret, reg_w   = run_backtest(mu_regime, returns)
+    # EDIT - run backtests with test_dates
+    base_ret, base_w = run_backtest(mu_base, returns, eval_dates=test_dates)
+    reg_ret, reg_w   = run_backtest(mu_regime, returns, eval_dates=test_dates)
 
     # compute cumulative returns
     cum_base = (1 + base_ret).cumprod()
@@ -47,7 +66,9 @@ def main():
     plt.ylabel("Portfolio Value")
     plt.legend()
     plt.grid()
-    plt.show()
+    # plt.show()
+    plt.savefig("figures/cumulative_returns.png")
+    plt.close()
 
     # cogit mpute metrics
     base_metrics = compute_metrics(base_ret)
