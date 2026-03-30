@@ -34,8 +34,9 @@ def main():
     # load data
     # mu_base, mu_regime, returns = load_data("outputs_draft/all_forecasts.csv")
     # EDIT — updated load_data to also return test_dates, which we can use to filter the backtest evaluation
+    
     mu_base, mu_regime, returns, test_dates = load_data("outputs_draft/all_forecasts.csv")
-
+    # mu_base, mu_regime, returns, test_dates = load_data("all_forecasts_new.csv")
 
     print("--- Data Shape Diagnostic ---")
     print(f"mu_base shape: {mu_base.shape}")
