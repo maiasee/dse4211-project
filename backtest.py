@@ -73,7 +73,7 @@ from mvo import optimize_portfolio
 
 #     return portfolio_returns, weights_history
 
-def run_backtest(mu, real_returns, window=20, lamda=5.0, eval_dates=None):
+def run_backtest(mu, real_returns, window=20, lamda=5.0, eval_dates=None, max_weight=0.3):
     portfolio_returns = []
     weights_history = []
 
@@ -108,7 +108,7 @@ def run_backtest(mu, real_returns, window=20, lamda=5.0, eval_dates=None):
             continue
         
         cov_t = cov_t + 1e-6 * np.eye(cov_t.shape[0])  # regularisation
-        w_t = optimize_portfolio(mu_t, cov_t, lamda=lamda)
+        w_t = optimize_portfolio(mu_t, cov_t, lamda=lamda, max_weight=max_weight)
         
         r_next = real_returns.loc[current_date].values
         if np.isnan(r_next).any():

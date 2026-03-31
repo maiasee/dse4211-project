@@ -20,14 +20,21 @@ def objective(w, nu, cov, lamda):
     '''
     return -(portfolio_return(w, nu) - lamda * portfolio_variance(w, cov) )
 
-def optimize_portfolio(mu, cov, lamda = 1.0):
+def optimize_portfolio(mu, cov, lamda=1.0, max_weight=0.3):
     '''
     Compute optimal portfolio weights using MVO
-    
+
     Params:
         mu (np.array): Expected returns for each asset
         cov (np.array): Covariance matrix of asset returns
-        lamda (float): Risk aversion parameter
+        lamda (float): Risk aversion parameter. Default 1.0 balances return
+            and variance equally on a normalised scale; increase to penalise
+            risk more heavily, decrease to chase higher expected return.
+        max_weight (float): Maximum weight allowed for any single asset.
+            Default 0.3 (30%) enforces diversification and prevents the
+            optimiser from concentrating the portfolio in one or two assets,
+            which commonly occurs with unconstrained MVO due to estimation
+            error in mu and cov.
 
     Returns:
         w (np.array): Optimal portfolio weights
@@ -47,7 +54,7 @@ def optimize_portfolio(mu, cov, lamda = 1.0):
     )
 
     # bounds
-    bounds = tuple((0, 0.3) for _ in range(n))  # max 30% allocation per asset -> need to justify!!!
+    bounds = tuple((0, max_weight) for _ in range(n))
 
     # optimize
     result = minimize(objective, w0, args=(mu, cov, lamda), method='SLSQP', bounds=bounds, constraints=constraints)
