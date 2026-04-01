@@ -32,7 +32,7 @@ functions/
 | `functions/data_processing.py` | Utility module for loading historical returns and LSTM forecasts, aligning dates/assets, and computing 7-day cumulative returns |
 | `functions/mvo.py` | Mean-Variance Optimization: solves a constrained quadratic program to compute optimal portfolio weights given forecasted returns and a covariance matrix |
 | `functions/backtest.py` | Backtesting engine that rebalances weekly using MVO weights and tracks realized portfolio returns and weight history |
-| `mvo_sensitivity_analysis.ipynb` | Grid search over regularization (lambda) and weight constraint parameters to identify hyperparameter combinations with the best Sharpe ratio, cumulative return, and max drawdown |
+| `functions/mvo_sensitivity_analysis.ipynb` | Grid search over regularization (lambda) and weight constraint parameters to identify hyperparameter combinations with the best Sharpe ratio, cumulative return, and max drawdown |
 
 ## Setup
 
