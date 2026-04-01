@@ -1,10 +1,10 @@
 {
-  "seq_len": 30,
-  "learning_rate": 0.001,
-  "hidden_size": 32,
-  "num_layers": 1,
+  "seq_len": 10,
+  "learning_rate": 0.0001,
+  "hidden_size": 64,
+  "num_layers": 2,
   "dropout": 0.3,
-  "batch_size": 32,
+  "batch_size": 64,
   "epochs": 20,
   "weight_decay": 0.0,
   "patience": 5

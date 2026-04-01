@@ -33,7 +33,7 @@ def compute_metrics(log_returns):
 
 
 def main():
-    ALL_FCSTS_FP = "outputs_draft/all_forecasts.csv"
+    ALL_FCSTS_FP = "lstm_output/all_forecasts.csv"
     HIST_DATA_FP = "data/binance_data_raw.csv"
 
     mu_base, mu_regime, daily_log_returns, cumulative_returns, rebalancing_dates = load_data(
@@ -79,13 +79,13 @@ def main():
     plt.figure(figsize=(10, 6))
     plt.plot(pd.to_datetime(cum_base.index), cum_base.values, label="Baseline Portfolio")
     plt.plot(pd.to_datetime(cum_reg.index), cum_reg.values, label="Regime Portfolio")
-    plt.title("Cumulative Returns")
+    plt.title("Cumulative Portfolio Value")
     plt.xlabel("Date")
-    plt.ylabel("Portfolio Value")
+    # plt.ylabel("Portfolio Value")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("figures/cumulative_returns.png")
+    plt.savefig("figures/cumulative_port_val>zscore.png")
     plt.close()
 
     # Metrics
