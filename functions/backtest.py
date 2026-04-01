@@ -1,7 +1,7 @@
 from matplotlib import dates
 import numpy as np
 import pandas as pd
-from mvo import optimize_portfolio  
+from functions.mvo import optimize_portfolio  
 
 def run_backtest(mu, daily_log_returns, cumulative_returns, rebalancing_dates, window=20, lamda=5.0):
     portfolio_returns = []

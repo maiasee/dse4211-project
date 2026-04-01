@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import importlib
-from data_processing import load_data
-from backtest import run_backtest
+from functions.data_processing import load_data
+from functions.backtest import run_backtest
 
 def compute_metrics(log_returns):
     log_returns = log_returns.dropna()
