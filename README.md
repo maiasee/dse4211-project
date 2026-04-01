@@ -7,16 +7,31 @@ BTC, ETH, BNB, ADA, XRP, LTC, BCH, LINK (daily OHLCV data from Binance, 2020–2
 
 ## Pipeline Overview
 
+### Pipeline (run in order)
+
+`01_binance_data_cleaning.ipynb` → `02_lstm_preprocessing_pipeline.ipynb` → `03_lstm_training.ipynb` → `04_run_portfolio.py`
+
+| Step | File | Description |
+|------|------|-------------|
+| 1 | `01_binance_data_cleaning.ipynb` | Fetches raw OHLCV data, computes technical indicators (SMA, EMA, momentum, CCI, regime labels), adds a 7-day return target, and splits into train/val/test sets |
+| 2 | `02_lstm_preprocessing_pipeline.ipynb` | Converts cleaned data into per-asset LSTM-ready sequences with a 30-day lookback window and z-score scaling; saves numpy arrays to `lstm_ready_data/` |
+| 3 | `03_lstm_training.ipynb` | Trains baseline and regime-aware LSTM models per asset using random hyperparameter search with expanding-window cross-validation; saves forecasts and model weights to `outputs/` |
+| 4 | `04_run_portfolio.py` | Orchestration script: loads forecasts, runs backtests for baseline and regime-aware models, computes performance metrics (Sharpe, volatility, max drawdown), and benchmarks against equal-weight |
+
+### Supporting Modules (called by `04_run_portfolio.py`)
+```
+04_run_portfolio.py
+├── data_processing.py
+├── mvo.py
+└── backtest.py
+```
+
 | File | Description |
 |------|-------------|
-| `01_binance_data_cleaning.ipynb` | Fetches raw OHLCV data, computes technical indicators (SMA, EMA, momentum, CCI, regime labels), adds a 7-day return target, and splits into train/val/test sets |
-| `02_lstm_preprocessing_pipeline.ipynb` | Converts cleaned data into per-asset LSTM-ready sequences with a 30-day lookback window and z-score scaling; saves numpy arrays to `lstm_ready_data/` |
-| `03_lstm_training.ipynb` | Trains baseline and regime-aware LSTM models per asset using random hyperparameter search with expanding-window cross-validation; saves forecasts and model weights to `outputs/` |
-| `mvo_sensitivity_analysis.ipynb` | Grid search over regularization (lambda) and weight constraint parameters to identify hyperparameter combinations with the best Sharpe ratio, cumulative return, and max drawdown |
 | `data_processing.py` | Utility module for loading historical returns and LSTM forecasts, aligning dates/assets, and computing 7-day cumulative returns |
 | `mvo.py` | Mean-Variance Optimization: solves a constrained quadratic program to compute optimal portfolio weights given forecasted returns and a covariance matrix |
 | `backtest.py` | Backtesting engine that rebalances weekly using MVO weights and tracks realized portfolio returns and weight history |
-| `04_run_portfolio.py` | Orchestration script: loads forecasts, runs backtests for baseline and regime-aware models, computes performance metrics (Sharpe, volatility, max drawdown), and benchmarks against equal-weight |
+| `mvo_sensitivity_analysis.ipynb` | Grid search over regularization (lambda) and weight constraint parameters to identify hyperparameter combinations with the best Sharpe ratio, cumulative return, and max drawdown |
 
 ## Setup
 
