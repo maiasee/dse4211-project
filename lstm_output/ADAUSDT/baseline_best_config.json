@@ -1,0 +1,11 @@
+{
+  "seq_len": 15,
+  "learning_rate": 0.0001,
+  "hidden_size": 64,
+  "num_layers": 1,
+  "dropout": 0.1,
+  "batch_size": 32,
+  "epochs": 20,
+  "weight_decay": 0.0001,
+  "patience": 5
+}
