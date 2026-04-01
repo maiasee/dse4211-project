@@ -48,6 +48,7 @@ scipy==1.17.1
 setuptools==82.0.1
 six==1.17.0
 stack-data==0.6.3
+statsmodels==0.14.4
 sympy==1.14.0
 threadpoolctl==3.6.0
 torch==2.10.0
