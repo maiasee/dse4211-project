@@ -20,11 +20,11 @@ BTC, ETH, BNB, ADA, XRP, LTC, BCH, LINK (daily OHLCV data from Binance, 2020–2
 
 ### Supporting Modules (called by `04_run_portfolio.py`)
 ```
-04_run_portfolio.py
-└── functions/
-    ├── data_processing.py
-    ├── mvo.py
-    └── backtest.py
+functions/
+  ├── data_processing.py
+  ├── mvo.py
+  ├── sensitivity_analysis.py
+  └── backtest.py
 ```
 
 | File | Description |
