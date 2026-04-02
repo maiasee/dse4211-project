@@ -1,28 +1,20 @@
-# Virtual environments
 .venv/
 venv/
 env/
-
-# Python cache
+.env
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Jupyter Notebook checkpoints
 .ipynb_checkpoints/
-
-# Environment variables
-.env
-
-# OS files
 .DS_Store
 Thumbs.db
-
-# Build / distribution
 build/
 dist/
 *.egg-info/
-
-# Logs
 *.log
+outputs/data/*.csv
+outputs/figures/*.png
+outputs/lstm_ready_data/*.npy
+outputs/models/*
+outputs/outputs_feature_subsets/*
