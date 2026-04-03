@@ -35,7 +35,7 @@ functions/
 | `functions/mvo_sensitivity_analysis.ipynb` | Grid search over regularization (lambda) and weight constraint parameters to identify hyperparameter combinations with the best Sharpe ratio, cumulative return, and max drawdown |
 
 ## Setup
-1. Create a virtual environment (Example for windows)
+1. Create a virtual environment (Example for windows in the command prompt)
 ``` bash
 python -m venv .venv 
 .venv\Scripts\Activate.ps1
