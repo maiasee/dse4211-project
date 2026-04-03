@@ -35,12 +35,23 @@ functions/
 | `functions/mvo_sensitivity_analysis.ipynb` | Grid search over regularization (lambda) and weight constraint parameters to identify hyperparameter combinations with the best Sharpe ratio, cumulative return, and max drawdown |
 
 ## Setup
+1. Create a virtual environment (Example for windows)
+``` bash
+python -m venv .venv 
+.venv\Scripts\Activate.ps1
+```
 
+2. Install the requirements
 ```bash
 pip install -r requirements.txt
 ```
 
-Run the notebooks in order (01 → 04) for the full backtest and analysis.
+3. Run the notebooks in order (01 → 03) for the pipeline and LSTM training.
+
+4. Run the run portfolio script to obtain the metrics and plots used in the report.
+``` bash
+python 04_run_portfolio.py
+```
 
 ## Output
 
