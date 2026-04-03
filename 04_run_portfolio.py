@@ -22,7 +22,6 @@ def compute_metrics(log_returns):
     max_drawdown = drawdown.min()
 
     positive_return_rate = (log_returns > 0).mean()
-    highest_return = log_returns.max()
 
     return {
         "Total Return": total_return,
@@ -30,7 +29,6 @@ def compute_metrics(log_returns):
         "Sharpe Ratio": sharpe,
         "Max Drawdown": max_drawdown,
         "Positive Return Rate": positive_return_rate,
-        "Highest Period Return": highest_return
     }
 
 def run_buy_and_hold_backtest(daily_log_returns, evaluation_dates):
