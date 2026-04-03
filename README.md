@@ -46,7 +46,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-3. Run the notebooks in order (01 → 03) for the pipeline and LSTM training.
+3. Run the notebooks in order (01 → 03) using the venv kernel to run data processing pipeline and LSTM training.
 
 4. Run the run portfolio script to obtain the metrics and plots used in the report.
 ``` bash
