@@ -115,9 +115,6 @@ def main():
         evaluation_dates=common_dates
     )   
 
-    # print("Check Weekly Structure:")
-    # print("Expected for weekly over 1 year: ~52")
-
     # Cumulative portfolio value from weekly LOG returns
     cum_base_raw = np.exp(base_ret.cumsum())
     cum_reg_raw = np.exp(reg_ret.cumsum())
@@ -130,14 +127,13 @@ def main():
     cum_reg = cum_reg / cum_reg.iloc[0]
     ew_metrics = compute_metrics(ew_ret)
 
-    # === Cumulative Portfolio Value Comparison Plot
+    # Cumulative Portfolio Value Comparison Plot
     plt.figure(figsize=(10, 6))
     plt.plot(pd.to_datetime(cum_base.index), cum_base.values, label="Baseline Portfolio")
     plt.plot(pd.to_datetime(cum_reg.index), cum_reg.values, label="Regime Portfolio")
     plt.plot(pd.to_datetime(cum_ew.index), cum_ew.values, label="Buy and Hold")
     plt.title("Cumulative Portfolio Value")
     plt.xlabel("Date")
-    # plt.ylabel("Portfolio Value")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
@@ -156,7 +152,7 @@ def main():
     print("\nPerformance Metrics:")
     print(metrics_df)
     
-    # === Save metrics as png
+    # Save metrics as png
     # Add final portfolio values to metrics
     base_metrics["Final Portfolio Value"] = cum_base.iloc[-1] if len(cum_base) > 0 else np.nan
     reg_metrics["Final Portfolio Value"] = cum_reg.iloc[-1] if len(cum_reg) > 0 else np.nan
@@ -196,11 +192,9 @@ def main():
 
         col_idx = list(metrics_df.columns).index(best_col)
 
-        # +1 because row 0 is header in matplotlib table
         table[(i + 1, col_idx)].set_text_props(weight='bold')
 
         table.auto_set_font_size(True)
-        # table.set_fontsize(10)
         table.scale(1.1, 1.4)
 
     plt.tight_layout()
