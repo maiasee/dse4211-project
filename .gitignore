@@ -15,6 +15,7 @@ dist/
 *.log
 outputs/data/*.csv
 outputs/figures/*.png
+outputs/portfolio_results/*.csv
 outputs/lstm_ready_data/*.npy
 outputs/models/*
 outputs/outputs_feature_subsets/*

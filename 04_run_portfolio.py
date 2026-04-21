@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import importlib
 from functions.data_processing import load_data
 from functions.backtest import run_backtest
+from functions.simple_mvo_backtest import run_backtest_historical_mu
 
 def compute_metrics(log_returns):
     log_returns = log_returns.dropna()
@@ -21,58 +22,37 @@ def compute_metrics(log_returns):
     drawdown = cumulative / cumulative.cummax() - 1
     max_drawdown = drawdown.min()
 
-    positive_return_rate = (log_returns > 0).mean()
-
     return {
         "Total Return": total_return,
         "Volatility": volatility,
         "Sharpe Ratio": sharpe,
-        "Max Drawdown": max_drawdown,
-        "Positive Return Rate": positive_return_rate,
+        "Max Drawdown": max_drawdown
     }
 
-def run_buy_and_hold_backtest(daily_log_returns, evaluation_dates):
+def run_equal_weight_backtest(daily_log_returns, rebalancing_dates):
     daily_log_returns = daily_log_returns.copy()
     daily_log_returns.index = pd.to_datetime(daily_log_returns.index)
-    daily_log_returns = daily_log_returns.sort_index()
+    rebalancing_dates = pd.to_datetime(rebalancing_dates)
 
-    evaluation_dates = pd.to_datetime(evaluation_dates)
-    start_date = evaluation_dates.min()
-    end_date = evaluation_dates.max()
+    ew_returns = []
 
-    daily_log_returns = daily_log_returns.loc[
-        (daily_log_returns.index >= start_date) & (daily_log_returns.index <= end_date)
-    ]
+    for i in range(len(rebalancing_dates) - 1):
+        start = rebalancing_dates[i]
+        end = rebalancing_dates[i + 1]
 
-    if daily_log_returns.empty:
-        raise ValueError("No returns available for the requested evaluation period.")
+        window = daily_log_returns[
+            (daily_log_returns.index > start) & (daily_log_returns.index <= end)
+        ]
 
-    n_assets = daily_log_returns.shape[1]
-    w0 = np.ones(n_assets) / n_assets
+        if window.empty:
+            continue
 
-    daily_simple_returns = np.exp(daily_log_returns) - 1
+        w = np.ones(window.shape[1]) / window.shape[1]
+        port_ret = window @ w
 
-    asset_values = pd.DataFrame(
-        index=daily_simple_returns.index,
-        columns=daily_simple_returns.columns,
-        dtype=float
-    )
-    asset_values.iloc[0] = w0 * 1.0
+        ew_returns.append(port_ret.sum())
 
-    for t in range(1, len(daily_simple_returns)):
-        asset_values.iloc[t] = asset_values.iloc[t - 1] * (1 + daily_simple_returns.iloc[t])
-
-    portfolio_value_daily = asset_values.sum(axis=1)
-
-    # align to exact backtest dates
-    portfolio_value = portfolio_value_daily.reindex(evaluation_dates, method="ffill").dropna()
-
-    # renormalise to start at 1
-    portfolio_value = portfolio_value / portfolio_value.iloc[0]
-
-    portfolio_log_returns = np.log(portfolio_value / portfolio_value.shift(1)).dropna()
-
-    return portfolio_log_returns, portfolio_value
+    return pd.Series(ew_returns, index=rebalancing_dates[1:len(ew_returns)+1])
 
 def main():
     ALL_FCSTS_FP = "outputs/lstm_model_output/all_forecasts.csv"
@@ -82,6 +62,7 @@ def main():
         HIST_DATA_FP, ALL_FCSTS_FP
     )
 
+    print("\n=== Running Portfolio Backtests ===")
     print("Data Shape Diagnostic:")
     print(f"mu_base shape: {mu_base.shape}")
     print(f"mu_regime shape: {mu_regime.shape}")
@@ -108,64 +89,72 @@ def main():
         lamda=5.0
     )
 
-    common_dates = base_ret.index.intersection(reg_ret.index)
+    ### Equal Weight Backtest ###
+    # ew_ret = run_equal_weight_backtest(daily_log_returns, rebalancing_dates)
+    # cum_ew = np.exp(ew_ret.cumsum())
+    
+    ### Simple MVO Backtest ###
+    hist_ret, hist_w = run_backtest_historical_mu(
+    daily_log_returns,
+    cumulative_returns,
+    rebalancing_dates,
+    window=20,
+    lamda=5.0
+    )
 
-    ew_ret, cum_ew = run_buy_and_hold_backtest(
-        daily_log_returns,
-        evaluation_dates=common_dates
-    )   
+    # === Cumulative portfolio value from weekly LOG returns
+    cum_base = np.exp(base_ret.cumsum())
+    cum_reg = np.exp(reg_ret.cumsum())
+    # ew_metrics = compute_metrics(ew_ret)
+    cum_hist = np.exp(hist_ret.cumsum())
 
-    # Cumulative portfolio value from weekly LOG returns
-    cum_base_raw = np.exp(base_ret.cumsum())
-    cum_reg_raw = np.exp(reg_ret.cumsum())
-
-    cum_base = cum_base_raw / cum_base_raw.iloc[0]
-    cum_reg = cum_reg_raw / cum_reg_raw.iloc[0]
-
-    # renormalise so the first plotted value starts at 1
-    cum_base = cum_base / cum_base.iloc[0]
-    cum_reg = cum_reg / cum_reg.iloc[0]
-    ew_metrics = compute_metrics(ew_ret)
-
-    # Cumulative Portfolio Value Comparison Plot
+    # === Cumulative Portfolio Value Comparison Plot
     plt.figure(figsize=(10, 6))
     plt.plot(pd.to_datetime(cum_base.index), cum_base.values, label="Baseline Portfolio")
     plt.plot(pd.to_datetime(cum_reg.index), cum_reg.values, label="Regime Portfolio")
-    plt.plot(pd.to_datetime(cum_ew.index), cum_ew.values, label="Buy and Hold")
+    # plt.plot(pd.to_datetime(cum_ew.index), cum_ew.values, label="Equal Weight")
+    plt.plot(pd.to_datetime(cum_hist.index), cum_hist.values, label="Simple MVO")
     plt.title("Cumulative Portfolio Value")
     plt.xlabel("Date")
+    # plt.ylabel("Portfolio Value")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("outputs/figures/cumulative_returns.png")
+    plt.savefig("outputs/figures/cum_returns_with_simple_mvo.png")
     plt.close()
+    print(f"Saved cumulative returns plot to outputs/figures/cum_returns_with_simple_mvo.png")
 
-    # Metrics
+    # === Metrics
     base_metrics = compute_metrics(base_ret)
     reg_metrics = compute_metrics(reg_ret)
+    # ew_metrics = compute_metrics(ew_ret)
+    hist_metrics = compute_metrics(hist_ret) # simple MVO
 
+    # Metrics table
+    # metrics_df = pd.DataFrame(
+    #     [base_metrics, reg_metrics, ew_metrics],
+    #     index=["Baseline", "Regime", "Equal Weight"]
+    # )
     metrics_df = pd.DataFrame(
-        [base_metrics, reg_metrics, ew_metrics],
-        index=["Baseline", "Regime", "Buy and Hold"]
-    )
+    [base_metrics, reg_metrics, hist_metrics],
+    index=["Baseline", "Regime", "Simple MVO"]
+)
+
+    # Reorder cols
+    metrics_df = metrics_df[["Total Return", "Sharpe Ratio", "Volatility", "Max Drawdown"]]
     
     print("\nPerformance Metrics:")
     print(metrics_df)
-    
-    # Save metrics as png
+    metrics_df.to_csv("outputs/portfolio_results/performance_metrics_with_simple_mvo.csv")
+    print(f"Saved performance metrics csv to outputs/portfolio_results/performance_metrics_with_simple_mvo.csv")
+
     # Add final portfolio values to metrics
     base_metrics["Final Portfolio Value"] = cum_base.iloc[-1] if len(cum_base) > 0 else np.nan
     reg_metrics["Final Portfolio Value"] = cum_reg.iloc[-1] if len(cum_reg) > 0 else np.nan
-    ew_metrics["Final Portfolio Value"] = cum_ew.iloc[-1] if len(cum_ew) > 0 else np.nan
+    # ew_metrics["Final Portfolio Value"] = cum_ew.iloc[-1] if len(cum_ew) > 0 else np.nan
+    hist_metrics["Final Portfolio Value"] = cum_hist.iloc[-1] if len(cum_hist) > 0 else np.nan
 
-    # Metrics table
-    metrics_df = pd.DataFrame({
-        "Baseline": base_metrics,
-        "Regime": reg_metrics,
-        "Buy and Hold": ew_metrics
-    })
-
-    # Save table as image
+    # Save metrics table as image
     fig, ax = plt.subplots(figsize=(8, 2.8))
     ax.axis("off")
 
@@ -180,28 +169,84 @@ def main():
         loc="center",
         cellLoc="center"
     )
+    table.auto_set_font_size(True)
+    table.scale(1.1, 1.8)  
 
     # Loop through rows and bold best values
-    for i, row_name in enumerate(metrics_df.index):
-        row = metrics_df.loc[row_name]
+    # metrics where lower is better
+    lower_is_better = {"Volatility"}
 
-        if row_name == "Volatility":
-            best_col = row.idxmin()
+    for j, col_name in enumerate(metrics_df.columns):
+        col = metrics_df[col_name]
+        
+        if col_name in lower_is_better:
+            best_idx = col.idxmin()
         else:
-            best_col = row.idxmax()
+            best_idx = col.idxmax()
+        
+        row_idx = list(metrics_df.index).index(best_idx)
+        table[(row_idx + 1, j)].set_text_props(weight='bold')
 
-        col_idx = list(metrics_df.columns).index(best_col)
-
-        table[(i + 1, col_idx)].set_text_props(weight='bold')
-
-        table.auto_set_font_size(True)
-        table.scale(1.1, 1.4)
 
     plt.tight_layout()
-    plt.savefig("outputs/figures/performance_metrics_table.png", dpi=300, bbox_inches="tight")
+    plt.savefig("outputs/figures/performance_metrics_table_with_simple_mvo.png", dpi=300, bbox_inches="tight")
     plt.close()
+    print(f"Saved performance metrics table as png to outputs/figures/performance_metrics_table_with_simple_mvo.png")
 
-    return metrics_df 
+    # === Portfolio weight plots
+    fig, axes = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+
+    colors = ['#E86C2F', '#5BC8D4', '#7B5EA7', '#F5A623', '#2E7D8C', 
+              '#A0522D', '#C8A882', '#4CAF7D']
+
+    # Baseline stacked area
+    axes[0].stackplot(
+        pd.to_datetime(base_w.index),
+        [base_w[col].values for col in base_w.columns],
+        labels=base_w.columns,
+        colors=colors[:len(base_w.columns)],
+        alpha=0.9
+    )
+    axes[0].set_title("Baseline Portfolio Weights Over Time")
+    axes[0].set_ylabel("Weight")
+    axes[0].set_ylim(0, 1)
+    axes[0].legend(loc="upper right", fontsize=8, ncol=2)
+    axes[0].grid(True, alpha=0.3)
+
+    # Regime stacked area
+    axes[1].stackplot(
+        pd.to_datetime(reg_w.index),
+        [reg_w[col].values for col in reg_w.columns],
+        labels=reg_w.columns,
+        colors=colors[:len(reg_w.columns)],
+        alpha=0.9
+    )
+    axes[1].set_title("Regime Portfolio Weights Over Time")
+    axes[1].set_xlabel("Date")
+    axes[1].set_ylabel("Weight")
+    axes[1].set_ylim(0, 1)
+    axes[1].legend(loc="upper right", fontsize=8, ncol=2)
+    axes[1].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig("outputs/figures/portfolio_weights.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"Saved portfolio weights plot to outputs/figures/portfolio_weights.png")
+
+    # === Save portfolio weights as CSV
+    os.makedirs("outputs/portfolio_results", exist_ok=True)
+    base_w.to_csv("outputs/portfolio_results/weights_baseline.csv")
+    reg_w.to_csv("outputs/portfolio_results/weights_regime.csv")
+    hist_w.to_csv("outputs/portfolio_results/weights_simple_mvo.csv")
+    ew_w = pd.DataFrame(
+        np.tile(1 / len(daily_log_returns.columns), (len(rebalancing_dates), len(daily_log_returns.columns))),
+        index=rebalancing_dates,
+        columns=daily_log_returns.columns
+    )
+    ew_w.to_csv("outputs/portfolio_results/weights_equal_weight.csv")
+    print("Saved portfolio weights to outputs/portfolio_results/")
+
+    return metrics_df
 
 if __name__ == "__main__":
     main()
