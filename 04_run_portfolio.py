@@ -21,12 +21,14 @@ def compute_metrics(log_returns):
     cumulative = np.exp(log_returns.cumsum())
     drawdown = cumulative / cumulative.cummax() - 1
     max_drawdown = drawdown.min()
+    positive_rate = (log_returns > 0).mean()
 
     return {
         "Total Return": total_return,
-        "Volatility": volatility,
         "Sharpe Ratio": sharpe,
-        "Max Drawdown": max_drawdown
+        "Volatility": volatility,
+        "Max Drawdown": max_drawdown,
+        "Positive Rate": positive_rate
     }
 
 def run_equal_weight_backtest(daily_log_returns, rebalancing_dates):
@@ -130,6 +132,10 @@ def main():
     # ew_metrics = compute_metrics(ew_ret)
     hist_metrics = compute_metrics(hist_ret) # simple MVO
 
+    base_metrics["Final Portfolio Value"] = cum_base.iloc[-1] if len(cum_base) > 0 else np.nan
+    reg_metrics["Final Portfolio Value"] = cum_reg.iloc[-1] if len(cum_reg) > 0 else np.nan
+    hist_metrics["Final Portfolio Value"] = cum_hist.iloc[-1] if len(cum_hist) > 0 else np.nan
+
     # Metrics table
     # metrics_df = pd.DataFrame(
     #     [base_metrics, reg_metrics, ew_metrics],
@@ -140,8 +146,6 @@ def main():
     index=["Baseline", "Regime", "Simple MVO"]
 )
 
-    # Reorder cols
-    metrics_df = metrics_df[["Total Return", "Sharpe Ratio", "Volatility", "Max Drawdown"]]
     
     print("\nPerformance Metrics:")
     print(metrics_df)
