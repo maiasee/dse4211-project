@@ -146,7 +146,7 @@ def main():
     index=["Baseline", "Regime", "Simple MVO"]
 )
 
-    
+    os.makedirs("outputs/portfolio_results", exist_ok=True)
     print("\nPerformance Metrics:")
     print(metrics_df)
     metrics_df.to_csv("outputs/portfolio_results/performance_metrics_with_simple_mvo.csv")
@@ -198,47 +198,66 @@ def main():
     print(f"Saved performance metrics table as png to outputs/figures/performance_metrics_table_with_simple_mvo.png")
 
     # === Portfolio weight plots
-    fig, axes = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+    os.makedirs("outputs/figures", exist_ok=True)
+    os.makedirs("outputs/figures/coin_weight_panels", exist_ok=True)
 
-    colors = ['#E86C2F', '#5BC8D4', '#7B5EA7', '#F5A623', '#2E7D8C', 
-              '#A0522D', '#C8A882', '#4CAF7D']
+    base_w.index = pd.to_datetime(base_w.index)
+    reg_w.index = pd.to_datetime(reg_w.index)
+    hist_w.index = pd.to_datetime(hist_w.index)
 
-    # Baseline stacked area
-    axes[0].stackplot(
-        pd.to_datetime(base_w.index),
-        [base_w[col].values for col in base_w.columns],
-        labels=base_w.columns,
-        colors=colors[:len(base_w.columns)],
-        alpha=0.9
-    )
-    axes[0].set_title("Baseline Portfolio Weights Over Time")
-    axes[0].set_ylabel("Weight")
-    axes[0].set_ylim(0, 1)
-    axes[0].legend(loc="upper right", fontsize=8, ncol=2)
-    axes[0].grid(True, alpha=0.3)
+    colors = ['#E86C2F', '#5BC8D4', '#7B5EA7', '#F5A623', '#2E7D8C',
+            '#A0522D', '#C8A882', '#4CAF7D']
 
-    # Regime stacked area
-    axes[1].stackplot(
-        pd.to_datetime(reg_w.index),
-        [reg_w[col].values for col in reg_w.columns],
-        labels=reg_w.columns,
-        colors=colors[:len(reg_w.columns)],
-        alpha=0.9
-    )
-    axes[1].set_title("Regime Portfolio Weights Over Time")
-    axes[1].set_xlabel("Date")
-    axes[1].set_ylabel("Weight")
-    axes[1].set_ylim(0, 1)
-    axes[1].legend(loc="upper right", fontsize=8, ncol=2)
-    axes[1].grid(True, alpha=0.3)
+    model_weights = {
+        "LSTM No Regime": base_w,
+        "LSTM Regime": reg_w,
+        "Simple MVO": hist_w
+    }
 
+    # Combined stacked area figure for all three models
+    fig, axes = plt.subplots(3, 1, figsize=(12, 14), sharex=True)
+
+    for ax, (model_name, weight_df) in zip(axes, model_weights.items()):
+        ax.stackplot(
+            weight_df.index,
+            [weight_df[col].values for col in weight_df.columns],
+            labels=weight_df.columns,
+            colors=colors[:len(weight_df.columns)],
+            alpha=0.9
+        )
+        ax.set_title(f"{model_name} Portfolio Weights Over Time")
+        ax.set_ylabel("Weight")
+        ax.set_ylim(0, 1)
+        ax.legend(loc="upper right", fontsize=8, ncol=2)
+        ax.grid(True, alpha=0.3)
+
+    axes[-1].set_xlabel("Date")
     plt.tight_layout()
-    plt.savefig("outputs/figures/portfolio_weights.png", dpi=300, bbox_inches="tight")
+    plt.savefig("outputs/figures/portfolio_weights_all_models.png", dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Saved portfolio weights plot to outputs/figures/portfolio_weights.png")
+    print("Saved combined stacked weights plot to outputs/figures/portfolio_weights_all_models.png")
+
+    # === One figure per coin, with 3 subplots (one for each model)
+    for coin in base_w.columns:
+        safe_coin = str(coin).lower().replace("/", "_").replace(" ", "_")
+
+        fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+
+        for ax, (model_name, weight_df) in zip(axes, model_weights.items()):
+            ax.plot(weight_df.index, weight_df[coin], linewidth=2)
+            ax.set_title(f"{coin} Weight - {model_name}")
+            ax.set_ylabel("Weight")
+            ax.set_ylim(0, 1)
+            ax.grid(True, alpha=0.3)
+
+        axes[-1].set_xlabel("Date")
+        plt.tight_layout()
+        out_fp = f"outputs/figures/coin_weight_panels/{safe_coin}_weights_all_models.png"
+        plt.savefig(out_fp, dpi=300, bbox_inches="tight")
+        plt.close()
+        print(f"Saved {out_fp}")
 
     # === Save portfolio weights as CSV
-    os.makedirs("outputs/portfolio_results", exist_ok=True)
     base_w.to_csv("outputs/portfolio_results/weights_baseline.csv")
     reg_w.to_csv("outputs/portfolio_results/weights_regime.csv")
     hist_w.to_csv("outputs/portfolio_results/weights_simple_mvo.csv")
