@@ -7,6 +7,9 @@ BTC, ETH, BNB, ADA, XRP, LTC, BCH, LINK (daily OHLCV data from Binance, 2020–2
 
 ## Pipeline Overview
 
+### Data
+Raw data saved to the `outputs/data/` directory.
+
 ### Pipeline (run in order)
 
 `01_binance_data_cleaning.ipynb` → `02_lstm_preprocessing_pipeline.ipynb` → `03_lstm_training.ipynb` → `04_run_portfolio.py`
